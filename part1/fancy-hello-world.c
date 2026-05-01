@@ -10,8 +10,8 @@
  * @brief Prints a stylized greeting with a border and colors.
  */
 int main(void) {
-    printf("%s******************************%s\n", YELLOW, RESET);
-    printf("%s*   %s%s   %s*%s\n", GREEN, RED, "Hello, Fancy World!", RED, RESET);
-    printf("%s******************************%s\n", YELLOW, RESET);
+    printf("%s-------SZYMON-------%s\n", YELLOW, RESET);
+    printf("%s|   %s%s   %s|%s\n", GREEN, RED, "Hello World!", GREEN, RESET);
+    printf("%s-------SZYMON-------%s\n", YELLOW, RESET);
     return 0;
 }
