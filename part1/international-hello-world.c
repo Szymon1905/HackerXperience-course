@@ -1,16 +1,21 @@
-
-
 #include <stdio.h>
 #include "international-hello-world.h"
 
-void print_international_hello(void) {
-    // The pre-processor replaces GREETING with the literal string
-    // defined in the header before the compiler even sees it.
-    printf("%s\n", GREETING);
+void print_hello_string(void) {
+#ifdef FRENCH
+    printf("Bonjour le monde!\n");
+#elif defined(SPANISH)
+    printf("Hola, mundo!\n");
+#elif defined(CHINESE)
+    printf("Nihao, shijie!\n");
+#elif defined(DANISH)
+    printf("Hej Verden!\n");
+#else
+    printf("Hello world!\n");
+#endif
 }
 
 int main(void) {
-    print_international_hello();
+    print_hello_string();
     return 0;
 }
-

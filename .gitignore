@@ -1,0 +1,8 @@
+# executables
+hello-world
+international-hello-world
+fancy-hello-world
+
+*.o
+
+tutorial1a.zip
