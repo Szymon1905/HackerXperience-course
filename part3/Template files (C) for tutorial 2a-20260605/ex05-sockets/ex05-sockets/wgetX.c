@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <errno.h>
 
 #include "url.h"
 #include "wgetX.h"
@@ -34,31 +33,79 @@ int main(int argc, char* argv[]) {
 	return 1;
     }
 
-    char *url = argv[1];
+
+
+    //char *url = argv[1];
+
+	//  buffer for redirect
+	char current_url[2048];
+	strncpy(current_url, argv[1], sizeof(current_url) - 1);
+	current_url[sizeof(current_url) - 1] = '\0';
 
     // Get optional file name
     if (argc > 2) {
 	file_name = argv[2];
     }
 
-    // First parse the URL
-    int ret = parse_url(url, &info);
-    if (ret) {
+	// Download the page
+	struct http_reply reply;
+
+	int redirects = 0;
+	while (redirects < 5) {
+		// First parse the URL
+		/*
+	int ret = parse_url(url, &info);
+	if (ret) {
 	fprintf(stderr, "Could not parse URL '%s': %s\n", url, parse_url_errstr[ret]);
 	return 2;
-    }
+	}
+	*/
 
-    //If needed for debug
-    print_url_info(&info);
+		int ret = parse_url(current_url, &info);
+		if (ret) {
+			// NOTE: Remember we changed parse_url_errstr[ret] to get_url_errstr(ret) earlier!
+			fprintf(stderr, "Could not parse URL '%s': %s\n", current_url, parse_url_errstr[ret]);
+			return 2;
+		}
 
-    // Download the page
-    struct http_reply reply;
+		//If needed for debug
+		print_url_info(&info);
 
-    ret = download_page(&info, &reply);
-    if (ret) {
-	return 3;
-    }
+		ret = download_page(&info, &reply);
+		if (ret) {
+			return 3;
+		}
 
+		int status;
+		sscanf(reply.reply_buffer, "HTTP/%*f %d", &status);
+
+		if (status == 301 || status == 302) {
+			printf("Redirect status %d \n", status);
+
+			// searches for location in header
+			char *loc = strstr(reply.reply_buffer, "Location: ");
+			if (!loc) loc = strstr(reply.reply_buffer, "location: ");
+
+			if (loc) {
+				loc += 10; // skip for link
+
+				// end of line
+				char *end = strstr(loc, "\r\n");
+				if (end) *end = '\0';
+
+				// 3.change of url to new
+				printf("Redirect to %s \n" , loc);
+				strncpy(current_url, loc, sizeof(current_url) - 1);
+				current_url[sizeof(current_url) - 1] = '\0';
+
+				free(reply.reply_buffer);
+				redirects++;
+				continue;
+			}
+		}
+		// if not redirect then 200
+		break;
+	}
     // Now parse the responses
     char *response = read_http_reply(&reply);
     if (response == NULL) {
