@@ -1,6 +1,8 @@
 # Compiler and Flags
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11
+LANGUAGE = FRENCH
+
 
 
 # Executable names
@@ -15,7 +17,7 @@ hello-world: hello-world.c hello-world.h
 
 # Target for international Hello World
 international-hello-world: international-hello-world.c international-hello-world.h
-	$(CC) $(CFLAGS) international-hello-world.c -o international-hello-world
+	$(CC) $(CFLAGS) -D$(LANGUAGE) international-hello-world.c -o international-hello-world
 
 # Target for fancy Hello World
 fancy-hello-world: fancy-hello-world.c
