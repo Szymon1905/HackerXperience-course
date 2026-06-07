@@ -17,18 +17,18 @@ int main(int argc, char *argv[]) {
     int port = atoi(argv[2]); // str to int
     int socketUDP = socket(AF_INET, SOCK_DGRAM, 0);
     if (socketUDP < 0) {
-        perror("Socket creation failed");
+        printf("Socket creation failed \n");
         return 1;
     }
 
     // // destination
-    struct sockaddr_in server_addr;
-    memset(&server_addr, 0, sizeof(server_addr)); // reset
-    server_addr.sin_family = AF_INET; // ipv4
-    server_addr.sin_port = htons(port); // port to netowrk byte order
+    struct sockaddr_in server_address;
+    memset(&server_address, 0, sizeof(server_address)); // reset
+    server_address.sin_family = AF_INET; // ipv4
+    server_address.sin_port = htons(port); // port to netowrk byte order
 
     // ip from string to binary form
-    if (inet_pton(AF_INET, ip_address, &server_addr.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, ip_address, &server_address.sin_addr) <= 0) {
         printf("Wrong IP format \n");
         close(socketUDP);
         return 1;
@@ -38,25 +38,23 @@ int main(int argc, char *argv[]) {
 
 
     while (1) {
-
         printf("Type text to send: ");
-        
-
         if (fgets(buffer, BUFFER_SIZE, stdin) == NULL) {
             // Ctrl+D (EOF), break
             printf("\n Exit ctrl+D\n");
             break;
         }
-
-
+        //printf("Input: %s", buffer);
         int message_len = strlen(buffer);
 
         //socket, message buffer, message len, flags, destination struct, struct size
         int bytes_sent = sendto(socketUDP, buffer, message_len, 0,
-                                (struct sockaddr *)&server_addr, sizeof(server_addr));
+                                (struct sockaddr *)&server_address, sizeof(server_address));
                                 
         if (bytes_sent < 0) {
             printf("UDP error \n");
+        } else {
+            printf("Sent %d bytes\n", bytes_sent);
         }
     }
 

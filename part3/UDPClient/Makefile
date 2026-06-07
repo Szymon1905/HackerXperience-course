@@ -8,21 +8,51 @@
 
 # Here is a simple Make Macro.
 
-LINK_TARGET = test_url
+
+# Compiler and Flags
+CC = gcc
+CFLAGS = -Wall -Wextra -std=c11
+
+# Executable names
+TARGETS = client server fancyclient
+
+# builds all
+all: $(TARGETS)
+
+UDPclient: client.c
+	$(CC) $(CFLAGS) client.c -o client
+
+UDPserver: server.c
+	$(CC) $(CFLAGS) server.c -o server
+
+fancyclient: fancyclient.c
+	$(CC) $(CFLAGS) fancyclient.c -o fancyclient
+
+
+# to clean up build files
+clean:
+	rm -f $(TARGETS) *.o
+
+.PHONY: all clean
+
+#LINK_TARGET = \
+	UDPclient \
+	UDPserver
 
 # Here is a Make Macro that uses the backslash to extend to multiple lines.
 # This allows quick modification of more object files.
 
-OBJS = \
-	test_url.o \
-	url.o
+#OBJS = \
+	UDPclient.o \
+	 UDPserver.o
+
 
 	
 # Here is a Make Macro defined by two Macro Expansions.
 # A Macro Expansion may be treated as a textual replacement of the Make Macro.
 # Macro Expansions are introduced with $ and enclosed in (parentheses).
 
-REBUILDABLES = $(OBJS) $(LINK_TARGET)
+# REBUILDABLES = $(OBJS) $(LINK_TARGET)
 
 # There are two standard Targets your Makefile should probably have:
 # "all" and "clean", because they are often command-line Goals.
@@ -32,7 +62,7 @@ REBUILDABLES = $(OBJS) $(LINK_TARGET)
 # The rule for "all" is used to incrementally build your system.
 # It does this by expressing a dependency on the results of that system,
 # which in turn have their own rules and dependencies.
-all : $(LINK_TARGET)
+# all : $(LINK_TARGET)
 
 # Make Macros do not need to be defined before their Macro Expansions,
 # but they normally should be defined before they appear in any Rules.
@@ -44,8 +74,8 @@ all : $(LINK_TARGET)
 # and two Commands (indented by tabs on the lines that follow).
 # The space before the colon is not required but added here for clarity.
 
-clean: 
-	rm -f $(REBUILDABLES)
+#clean:
+#	rm -f $(TARGETS)
 
 # There is no required order to the list of rules as they appear in the Makefile.
 # Make will build its own dependency tree and only execute each rule only once
@@ -55,8 +85,8 @@ clean:
 # $@ expands to the rule's target, in this case "wgetX".
 # $^ expands to the rule's dependencies, in this case the two files
 # url.o and wgetX.o
-$(LINK_TARGET) : $(OBJS)
-	cc -g -o $@ $^ 
+# $(LINK_TARGET) : $(OBJS)
+#	cc -g -o $@ $^
 
 # Here is a Pattern Rule, often used for compile-line.
 # It says how to create a file with a .o suffix, given a file with a .c suffix.
@@ -64,8 +94,8 @@ $(LINK_TARGET) : $(OBJS)
 # $@ for the pattern-matched target
 # $lt; for the pattern-matched dependency
 
-%.o : %.c
-	cc -g  -Wall -o $@ -c $<
+#%.o : %.c
+#	cc -g  -Wall -o $@ -c $<
   
 # These are Dependency Rules, which are rules without any command.
 # Dependency Rules indicate that if any file to the right of the colon changes,
@@ -74,6 +104,5 @@ $(LINK_TARGET) : $(OBJS)
 # (in this case, by the Pattern Rule above).
 # Dependency Rules are often used to capture header file dependencies.
 
-test_url.o: url.h url.c
 
  
