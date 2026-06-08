@@ -28,8 +28,8 @@ void* handle_request(void* arg) {
     request_t *request = (request_t*)arg;
 
     // data processing delay
-    //sleep(DELAY);
-    usleep(1000000);
+    sleep(DELAY);
+    //usleep(1000000);
 
     if (sendto(request->socket,
         request->buffer,

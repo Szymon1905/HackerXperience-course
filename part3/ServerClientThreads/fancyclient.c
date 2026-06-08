@@ -36,8 +36,8 @@ void *receive_messages(void * socket) {
             bytes_received--;
         }
 
-        printf("Received: %s \n", buffer);
-
+        printf("\nReceived: %s\n", buffer);
+        printf("Send: ");
         //printf("Send: ");
         fflush(stdout);
     }
@@ -83,7 +83,8 @@ int main(int argc, char *argv[]) {
         fflush(stdout);
         if (fgets(buffer, BUFFER_SIZE, stdin) == NULL) {
             // Ctrl+D (EOF), break
-            printf("\n Exit ctrl+D\n");
+            //printf("\n Exit ctrl+D\n");
+            pthread_join(thread_receiver, NULL);
             break;
         }
         //printf("Input: %s", buffer);
@@ -99,7 +100,7 @@ int main(int argc, char *argv[]) {
             //printf("Sent %d bytes\n", bytes_sent);
         }
     }
-    pthread_cancel(thread_receiver);
+    //pthread_cancel(thread_receiver);
     close(socketUDP);
     return 0;
 }
