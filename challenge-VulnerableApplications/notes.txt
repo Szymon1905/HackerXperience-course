@@ -1,0 +1,16 @@
+StackOverflow
+
+greeting_text var is 128 bytes.
+The code inits this with the string "Hello, dear " (12 bytes).
+This leaves 116 bytes of remaining space (128 - 12 = 116) before the buffer is full.
+The next buffer in memory there contains string command to be run via system()
+RCE can be done if input is too long (plus /r /n /0) and last charaters are command
+
+TO verwrite command buffer i send
+116 "A" + echo '<h2>AAAAA</h2>' >> /var/www/html/index.html  + /n to stdin
+116 "A" are filler chars to to fill buffer and rest is command for html file edit
+
+strcat(greeting_text, buf) does not check the destination size so buffer can be filled over to allow to overwrite next variable
+
+
+# was added to fix problem with bash command

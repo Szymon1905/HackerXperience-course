@@ -12,7 +12,7 @@
 int parse(int sockfd)
 {
     char buf[256] = {0};
-    char command[] = "uptime | sed 's/.*up \\[,*]* , .*/\\1/'";
+    char command[] = "uptime | sed 's/.*up \\([^,]*\\), .*/\\1/'";
     char greeting_text[128];
 
     if (dup2(sockfd, STDOUT_FILENO) < 0)
