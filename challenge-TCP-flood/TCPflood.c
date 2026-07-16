@@ -120,12 +120,12 @@ int prepare_packet(struct iphdr *iph, struct tcphdr *tcph, struct pseudo_tcp_hea
     psh_ptr->tcp_length = htons(sizeof(struct tcphdr) + strlen(data));
 
     int psize = sizeof(struct pseudo_tcp_header) + sizeof(struct tcphdr) + strlen(data);
-    char *pseudogram = (char *)malloc(psize);
-    memset(pseudogram, 0, psize);
-    memcpy(pseudogram, (char*) psh_ptr, sizeof(struct pseudo_tcp_header));
-    memcpy(pseudogram + sizeof(struct pseudo_tcp_header), tcph, sizeof(struct tcphdr) + strlen(data));
-    tcph->check = intchecksum((unsigned short *) pseudogram, psize); // final checksum
-    free(pseudogram);
+    char *datagram = (char *)malloc(psize);
+    memset(datagram, 0, psize);
+    memcpy(datagram, (char*) psh_ptr, sizeof(struct pseudo_tcp_header));
+    memcpy(datagram + sizeof(struct pseudo_tcp_header), tcph, sizeof(struct tcphdr) + strlen(data)); // ip header + tcp header + string 
+    tcph->check = intchecksum((unsigned short *) datagram, psize); // final checksum
+    free(datagram);
 
     return 0;
 }
