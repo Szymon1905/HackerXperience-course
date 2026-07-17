@@ -1,0 +1,20 @@
+run with:
+sudo ./TCPflood 192.168.56.101 2000
+
+
+on VM
+use VMDK file as base in create new panel
+set network to use host only adapter Vboxnet0
+change RAM to value in MB 
+
+
+
+
+sudo tcpdump -ni any tcp port 2000
+
+before and after to test
+nc 192.168.56.101 2000
+
+
+watch -n1 "ss -ant state syn-recv | wc -l"
+watch -n1 "ss -ant state syn-recv"

@@ -11,7 +11,7 @@
 typedef unsigned char u_char;
 #include "header.h" 
 
-#define SOURCE_PORT 4200
+#define SOURCE_PORT 2000
 #define PACKET_LENGTH 4096
 #define TEST_STRING "TEST Szymon Borzdynski"
 
@@ -46,6 +46,7 @@ int create_socket() {
     return sockfd;
 }
 
+
 unsigned short intchecksum(unsigned short *ptr, int bytes_count) {
     long sum = 0;
     unsigned short oddbyte;
@@ -71,9 +72,9 @@ unsigned short intchecksum(unsigned short *ptr, int bytes_count) {
 
 
 int prepare_packet(struct iphdr *iph, struct tcphdr *tcph, struct pseudo_tcp_header *psh_ptr, char *data) {
-    char ipa[15];
+    char ipa[16];
     char *random_ip = ipa;
-    memset(random_ip, 0, 15);
+    memset(random_ip, 0, 16);
     
     // Random IP for packet
     sprintf(random_ip, "%d.%d.%d.%d", rand()%255, rand()%255, rand()%255, rand()%255);
@@ -173,16 +174,22 @@ int main(int argc, char *argv[]) {
     
 
     while (1) {
+        
+
         prepare_packet(iph, tcph, &psh, data);
 
-        if (sendto(sockfd, packet, iph->tot_len, 0, (struct sockaddr *)&dest, sizeof(struct sockaddr)) == -1) {
-            printf("Error sendto\n");
+        ssize_t result = sendto(sockfd, packet, iph->tot_len, 0, (struct sockaddr *)&dest, sizeof(struct sockaddr));
+
+        if (result  == -1) {
+            perror("sendto");
+        } else{
+            sent_packets++;
+            printf("Sent packets: %d\n", sent_packets);
         }
 
         memset(packet, 0, PACKET_LENGTH);
 
-        sent_packets++;
-        printf("Sent packets: %d\n", sent_packets);
+        
     }
 
     return 0;
