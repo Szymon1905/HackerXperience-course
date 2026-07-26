@@ -1,82 +1,47 @@
-#ifndef DHCP_STARVATION_H
-#define DHCP_STARVATION_H
+#ifndef DHCP_STARVE_H
+#define DHCP_STARVE_H
 
-#include<stdio.h>
-#include<string.h>
-#include<sys/socket.h>
-#include<stdlib.h>
-#include<netinet/in.h>
-#include<arpa/inet.h>
+#include <stdint.h>
+#include <netinet/in.h>
 
-#endif
-
-// Some structures from :
-// - https://github.com/apple/darwin-xnu/blob/main/bsd/netinet/dhcp.h
 
 /*
-struct udphdr {
-  u_int16_t	source;
-  u_int16_t	dest;
-  u_int16_t	len;
-  u_int16_t	check;
+DHCP packet structure based on the BOOTP/DHCP
+based on RFC 2131
+custom for direct access to DHCP fields
+ */
+struct dhcp_packet{
+    uint8_t  op; // Message type - request/reply
+    uint8_t  htype; // Hardware address type
+    uint8_t  hlen; // Hardware address len
+    uint8_t  hops; // Relay hops
+    uint32_t xid; // Transaction ID
+    uint16_t secs; // Seconds elapsed
+    uint16_t flags; // DHCP flags
+    struct in_addr ciaddr; // Client IP 
+    struct in_addr yiaddr; // Assigned IP 
+    struct in_addr siaddr; // DHCP server IP 
+    struct in_addr giaddr; // Relay gateway IP
+    uint8_t chaddr[16]; // MAC Client hardware address
+    uint8_t sname[64]; // Optional server hostname
+    uint8_t file[128]; // Boot file name
+    uint8_t options[400]; // DHCP options, fixed buffer size for simplicity
 };
 
 
-struct iphdr {
-#if __BYTE_ORDER == __LITTLE_ENDIAN
-    unsigned int ihl:4;
-    unsigned int version:4;
-#elif __BYTE_ORDER == __BIG_ENDIAN
-    unsigned int version:4;
-    unsigned int ihl:4;
-#else
-# error	"Please fix <bits/endian.h>"
-#endif
-    u_int8_t tos;
-    u_int16_t tot_len;
-    u_int16_t id;
-    u_int16_t frag_off;
-    u_int8_t ttl;
-    u_int8_t protocol;
-    u_int16_t check;
-    u_int32_t saddr;
-    u_int32_t daddr;
-};
-*/
-// Here is the header information of DHCP ;
-struct dhcp_packet {
-	u_char dp_op;      /* packet opcode type */
-	u_char dp_htype;   /* hardware addr type */
-	u_char dp_hlen;    /* hardware addr length */
-	u_char dp_hops;    /* gateway hops */
-	u_int32_t dp_xid;     /* transaction ID */
-	u_int16_t dp_secs;    /* seconds since boot began */
-	u_int16_t dp_flags;   /* flags */
-	struct in_addr dp_ciaddr;  /* client IP address */
-	struct in_addr dp_yiaddr;  /* 'your' IP address */
-	struct in_addr dp_siaddr;  /* server IP address */
-	struct in_addr dp_giaddr;  /* gateway IP address */
-	u_char dp_chaddr[16];  /* client hardware address */
-	u_char dp_sname[64];  /* server host name */
-	u_char dp_file[128];  /* boot file name */
-	u_char dp_options[312];  /* variable-length options field */
-};
+#define DHCP_CLIENT_PORT 68
+#define DHCP_SERVER_PORT 67
 
-#define CLIENT_PORT 68
-#define SERVER_PORT 67
 
-int create_socket();
+int create_socket(void);
+
 int dhcp_discover(int sockfd);
+
 int check_response(int sockfd);
+
 void print_packet(const struct dhcp_packet packet);
+
 int send_packets(int sockfd);
 
 
-
-/*
-struct dhcp_packet { //udp packet
-	struct iphdr ip;
-	struct udphdr udp;
-	struct dhcp dhcp;
-};
-*/
+#endif
