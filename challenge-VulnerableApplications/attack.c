@@ -21,7 +21,7 @@ void attack(void) {
     // TCP Socket
     sock_fd = socket(AF_INET, SOCK_STREAM, 0);
     if (sock_fd < 0) {
-        perror("Socket creation failed");
+        printf("Socket error \n");
         return;
     }
 
