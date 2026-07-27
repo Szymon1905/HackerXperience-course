@@ -9,7 +9,7 @@ sudo ip addr add 102.168.56.1 dev enp0s3
 sudo ip addr flush dev enp0s3
 
 attack
-sudo ./DHCPfake
+sudo ./DHCPmine
 
 victim
 sudo dhclient -v enp0s3
@@ -32,7 +32,7 @@ listen-address=192.168.56.1
 bind-interfaces 
 address=/example.com/192.168.56.1
 
-sudo ./DHCPfake
+sudo ./DHCPmine
 
 
 
@@ -60,7 +60,7 @@ sudo ip addr flush dev enp0s3
 
 on attacker (host)
 sudo ./DHCPstarve
-sudo ./DHCPfake - will wait for discover packet (ignores starve packets)
+sudo ./DHCPmine - will wait for discover packet (ignores starve packets)
 
 on victim VM
 sudo dhclient -v enp0s3

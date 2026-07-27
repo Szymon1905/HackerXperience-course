@@ -98,9 +98,7 @@ int create_socket() {
 
 // creates DHCP discover packet
 int dhcp_discover(int sockfd) {
-	//FIRST STEP : SEND DHCP DISCOVERY MESSAGE --> BROADCAST
-
-    
+	
 	// https://www.scribd.com/doc/93647620/Dhcp-Header
 	struct dhcp_packet discovery_packet;
 	memset(&discovery_packet, 0, sizeof(discovery_packet));
@@ -166,7 +164,8 @@ int dhcp_discover(int sockfd) {
 	dest_broadcast.sin_family = AF_INET;
 	dest_broadcast.sin_port = htons(DHCP_SERVER_PORT);
 
-    //255.255.255.255, no IP is given yet so broadcast
+    //192.168.56.255, no IP is given yet so broadcast on that network from vboxnet0
+	//192.
 	dest_broadcast.sin_addr.s_addr = INADDR_BROADCAST; 
 
 
@@ -222,7 +221,6 @@ int send_packets(int sockfd) {
         // delay so network interface does not get overwhelmed
 		usleep(100);
 		
-		//printf("\nReceiving offer...\n");
 		//receive_offer(sockfd);
 	};
 	return 0;

