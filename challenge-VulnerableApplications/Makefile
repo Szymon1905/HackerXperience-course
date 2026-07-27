@@ -2,12 +2,12 @@
 CC = gcc
 CFLAGS = -Wall -Wextra -std=c11
 
-TARGETS = main
+TARGETS = attack
 
 all: $(TARGETS)
 
-VulApp: main.c
-	$(CC) $(CFLAGS) main.c -o VulApp
+attack: attack.c
+	$(CC) $(CFLAGS) attack.c -o attack
 
 
 clean:
