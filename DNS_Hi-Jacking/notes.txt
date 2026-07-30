@@ -1,0 +1,32 @@
+nslookup cnn.com 127.0.0.1
+Server:		127.0.0.1
+Address:	127.0.0.1#53
+
+Non-authoritative answer:
+Name:	cnn.com
+Address: 151.101.129.140
+Name:	cnn.com
+Address: 151.101.129.140 // reddit IP as replacement from my server
+
+
+change ubuntu settings to 127.0.0.1 DNS in both resolv.conf and GUI settings
+sudo systemctl restart systemd-resolved
+sudo rm /etc/resolv.conf
+echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf nameserver 127.0.0.1
+
+to restore:
+sudo rm /etc/resolv.conf
+sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+sudo systemctl restart systemd-resolved
+
+
+disable secure DNS in browser settings
+
+sudo rm /etc/resolv.conf
+echo "nameserver 127.0.0.1" | sudo tee /etc/resolv.conf
+nameserver 127.0.0.1
+
+
+sudo ln -sf /run/systemd/resolve/stub-resolv.conf /etc/resolv.conf
+sudo systemctl restart systemd-resolved
+
